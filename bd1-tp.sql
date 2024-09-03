@@ -15,14 +15,31 @@ CREATE SCHEMA IF NOT EXISTS `bd1-tp` ;
 USE `bd1-tp` ;
 
 -- -----------------------------------------------------
+-- Table `bd1-tp`.`Marca`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `bd1-tp`.`Marca` (
+  `idMarca` INT NOT NULL AUTO_INCREMENT,
+  `nombre` VARCHAR(45) NOT NULL,
+  `info` VARCHAR(200) NULL,
+  PRIMARY KEY (`idMarca`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
 -- Table `bd1-tp`.`ModeloDeVehículo`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `bd1-tp`.`ModeloDeVehículo` (
-  `idModeloDeVehículo` INT NOT NULL,
+  `idModeloDeVehículo` INT NOT NULL AUTO_INCREMENT,
   `nombre` VARCHAR(45) NOT NULL,
-  `marca` VARCHAR(45) NOT NULL,
-  `info` VARCHAR(200) NOT NULL,
-  PRIMARY KEY (`idModeloDeVehículo`))
+  `info` VARCHAR(200) NULL,
+  `Marca_idMarca` INT NOT NULL,
+  PRIMARY KEY (`idModeloDeVehículo`),
+  INDEX `fk_ModeloDeVehículo_Marca1_idx` (`Marca_idMarca` ASC) VISIBLE,
+  CONSTRAINT `fk_ModeloDeVehículo_Marca1`
+    FOREIGN KEY (`Marca_idMarca`)
+    REFERENCES `bd1-tp`.`Marca` (`idMarca`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
@@ -30,7 +47,7 @@ ENGINE = InnoDB;
 -- Table `bd1-tp`.`Automotriz`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `bd1-tp`.`Automotriz` (
-  `idAutomotriz` INT NOT NULL,
+  `idAutomotriz` INT NOT NULL AUTO_INCREMENT,
   `nombre` VARCHAR(45) NOT NULL,
   `direccion` VARCHAR(45) NOT NULL,
   PRIMARY KEY (`idAutomotriz`))
@@ -41,7 +58,7 @@ ENGINE = InnoDB;
 -- Table `bd1-tp`.`LíneaDeMontaje`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `bd1-tp`.`LíneaDeMontaje` (
-  `idLíneaDeMontaje` INT NOT NULL,
+  `idLíneaDeMontaje` INT NOT NULL AUTO_INCREMENT,
   `nombre` VARCHAR(45) NOT NULL,
   `capacidadProductivaDeUnidades` INT NOT NULL,
   `idModeloDeVhículo` INT NOT NULL,
@@ -66,8 +83,9 @@ ENGINE = InnoDB;
 -- Table `bd1-tp`.`EstaciónDeTrabajo`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `bd1-tp`.`EstaciónDeTrabajo` (
-  `idEstaciónDeTrabajo` INT NOT NULL,
-  `trabajo` VARCHAR(45) NOT NULL,
+  `idEstaciónDeTrabajo` INT NOT NULL AUTO_INCREMENT,
+  `trabajo` VARCHAR(45) NULL,
+  `orden` INT NOT NULL,
   `idLíneaDeMontaje` INT NOT NULL,
   PRIMARY KEY (`idEstaciónDeTrabajo`),
   INDEX `fk_EstaciónDeTrabajo_LíneaDeMontaje1_idx` (`idLíneaDeMontaje` ASC) VISIBLE,
@@ -83,7 +101,7 @@ ENGINE = InnoDB;
 -- Table `bd1-tp`.`Proveedor`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `bd1-tp`.`Proveedor` (
-  `idProveedor` INT NOT NULL,
+  `idProveedor` INT NOT NULL AUTO_INCREMENT,
   `nombre` VARCHAR(45) NOT NULL,
   PRIMARY KEY (`idProveedor`))
 ENGINE = InnoDB;
@@ -93,7 +111,7 @@ ENGINE = InnoDB;
 -- Table `bd1-tp`.`Insumo`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `bd1-tp`.`Insumo` (
-  `idInsumo` INT NOT NULL,
+  `idInsumo` INT NOT NULL AUTO_INCREMENT,
   `nombre` VARCHAR(45) NOT NULL,
   `descripcion` VARCHAR(100) NOT NULL,
   PRIMARY KEY (`idInsumo`))
@@ -104,10 +122,34 @@ ENGINE = InnoDB;
 -- Table `bd1-tp`.`Concesionaria`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `bd1-tp`.`Concesionaria` (
-  `idConcesionaria` INT NOT NULL,
+  `idConcesionaria` INT NOT NULL AUTO_INCREMENT,
   `nombre` VARCHAR(45) NOT NULL,
   `direccion` VARCHAR(45) NOT NULL,
   PRIMARY KEY (`idConcesionaria`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `bd1-tp`.`PedidoAutos`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `bd1-tp`.`PedidoAutos` (
+  `idPedidoAutos` INT NOT NULL AUTO_INCREMENT,
+  `fecha` DATE NOT NULL,
+  `idConcesionaria` INT NOT NULL,
+  `idAutomotriz` INT NOT NULL,
+  PRIMARY KEY (`idPedidoAutos`),
+  INDEX `fk_PedidoAutos_Concesionaria1_idx` (`idConcesionaria` ASC) VISIBLE,
+  INDEX `fk_PedidoAutos_Automotriz1_idx` (`idAutomotriz` ASC) VISIBLE,
+  CONSTRAINT `fk_PedidoAutos_Concesionaria1`
+    FOREIGN KEY (`idConcesionaria`)
+    REFERENCES `bd1-tp`.`Concesionaria` (`idConcesionaria`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_PedidoAutos_Automotriz1`
+    FOREIGN KEY (`idAutomotriz`)
+    REFERENCES `bd1-tp`.`Automotriz` (`idAutomotriz`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
@@ -116,12 +158,22 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `bd1-tp`.`Automovil` (
   `chasis` INT NOT NULL AUTO_INCREMENT,
+  `patente` VARCHAR(45) NOT NULL,
+  `fechaInicio` DATE NOT NULL,
+  `fechaFinalizacion` DATE NULL,
   `idLíneaDeMontaje` INT NOT NULL,
+  `idPedidoAutos` INT NOT NULL,
   PRIMARY KEY (`chasis`),
   INDEX `fk_Automovil_LíneaDeMontaje1_idx` (`idLíneaDeMontaje` ASC) VISIBLE,
+  INDEX `fk_Automovil_PedidoAutos1_idx` (`idPedidoAutos` ASC) VISIBLE,
   CONSTRAINT `fk_Automovil_LíneaDeMontaje1`
     FOREIGN KEY (`idLíneaDeMontaje`)
     REFERENCES `bd1-tp`.`LíneaDeMontaje` (`idLíneaDeMontaje`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_Automovil_PedidoAutos1`
+    FOREIGN KEY (`idPedidoAutos`)
+    REFERENCES `bd1-tp`.`PedidoAutos` (`idPedidoAutos`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -152,34 +204,10 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `bd1-tp`.`PedidoAutos`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `bd1-tp`.`PedidoAutos` (
-  `idPedidoAutos` INT NOT NULL,
-  `fecha` DATE NOT NULL,
-  `idConcesionaria` INT NOT NULL,
-  `idAutomotriz` INT NOT NULL,
-  PRIMARY KEY (`idPedidoAutos`),
-  INDEX `fk_PedidoAutos_Concesionaria1_idx` (`idConcesionaria` ASC) VISIBLE,
-  INDEX `fk_PedidoAutos_Automotriz1_idx` (`idAutomotriz` ASC) VISIBLE,
-  CONSTRAINT `fk_PedidoAutos_Concesionaria1`
-    FOREIGN KEY (`idConcesionaria`)
-    REFERENCES `bd1-tp`.`Concesionaria` (`idConcesionaria`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_PedidoAutos_Automotriz1`
-    FOREIGN KEY (`idAutomotriz`)
-    REFERENCES `bd1-tp`.`Automotriz` (`idAutomotriz`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
 -- Table `bd1-tp`.`ModeloPedido`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `bd1-tp`.`ModeloPedido` (
-  `idModeloPedido` INT NOT NULL,
+  `idModeloPedido` INT NOT NULL AUTO_INCREMENT,
   `cantidad` INT NOT NULL,
   `idModeloDeVehículo` INT NOT NULL,
   `idPedidoAutos` INT NOT NULL,
@@ -203,7 +231,7 @@ ENGINE = InnoDB;
 -- Table `bd1-tp`.`InformePedido`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `bd1-tp`.`InformePedido` (
-  `idInformePedido` INT NOT NULL,
+  `idInformePedido` INT NOT NULL AUTO_INCREMENT,
   `montoTotal` DOUBLE NOT NULL,
   `fechaEntregaEstimada` DATE NOT NULL,
   `idPedidoAutos` INT NOT NULL,
@@ -221,7 +249,7 @@ ENGINE = InnoDB;
 -- Table `bd1-tp`.`ListaDeInsumosPedidos`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `bd1-tp`.`ListaDeInsumosPedidos` (
-  `idlLstaDeInsumosPedidos` INT NOT NULL,
+  `idlLstaDeInsumosPedidos` INT NOT NULL AUTO_INCREMENT,
   `fecha` DATE NOT NULL,
   `idLíneaDeMontaje` INT NOT NULL,
   `idProveedor` INT NOT NULL,
@@ -269,7 +297,7 @@ ENGINE = InnoDB;
 -- Table `bd1-tp`.`InsumosRecibidos`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `bd1-tp`.`InsumosRecibidos` (
-  `idInsumosRecibidos` INT NOT NULL,
+  `idInsumosRecibidos` INT NOT NULL AUTO_INCREMENT,
   `fecha` DATE NOT NULL,
   `idlLstaDeInsumosPedidos` INT NOT NULL,
   PRIMARY KEY (`idInsumosRecibidos`),
