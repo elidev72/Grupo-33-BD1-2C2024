@@ -7,7 +7,7 @@
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8 */;
+/*!50503 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -34,9 +34,6 @@ CREATE TABLE `Automotriz` (
 -- Dumping data for table `Automotriz`
 --
 
-LOCK TABLES `Automotriz` WRITE;
-/*!40000 ALTER TABLE `Automotriz` DISABLE KEYS */;
-INSERT INTO `Automotriz` VALUES (1,'Autos del Sur','Avenida Patagonia 567, Neuquén');
 /*!40000 ALTER TABLE `Automotriz` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -200,8 +197,6 @@ CREATE TABLE `InsumoPedido` (
 -- Dumping data for table `InsumoPedido`
 --
 
-LOCK TABLES `InsumoPedido` WRITE;
-/*!40000 ALTER TABLE `InsumoPedido` DISABLE KEYS */;
 /*!40000 ALTER TABLE `InsumoPedido` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -255,8 +250,6 @@ CREATE TABLE `ListaDeInsumosPedidos` (
 -- Dumping data for table `ListaDeInsumosPedidos`
 --
 
-LOCK TABLES `ListaDeInsumosPedidos` WRITE;
-/*!40000 ALTER TABLE `ListaDeInsumosPedidos` DISABLE KEYS */;
 /*!40000 ALTER TABLE `ListaDeInsumosPedidos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -288,28 +281,6 @@ CREATE TABLE `LíneaDeMontaje` (
 LOCK TABLES `LíneaDeMontaje` WRITE;
 /*!40000 ALTER TABLE `LíneaDeMontaje` DISABLE KEYS */;
 INSERT INTO `LíneaDeMontaje` VALUES (1,'Línea de Montaje Renault Captur',100,1,1),(2,'Línea de Montaje Volkswagen Gol Trend',120,2,1),(3,'Línea de Montaje Chevrolet Onix',80,3,1);
-/*!40000 ALTER TABLE `LíneaDeMontaje` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `Marca`
---
-
-DROP TABLE IF EXISTS `Marca`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `Marca` (
-  `idMarca` int NOT NULL AUTO_INCREMENT,
-  `nombre` varchar(45) NOT NULL,
-  `info` varchar(200) DEFAULT NULL,
-  PRIMARY KEY (`idMarca`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Marca`
---
-
 LOCK TABLES `Marca` WRITE;
 /*!40000 ALTER TABLE `Marca` DISABLE KEYS */;
 INSERT INTO `Marca` VALUES (1,'Renault Argentina','Marca francesa de automóviles con presencia en Argentina desde hace décadas, conocida por su producción local en Córdoba y su amplia gama de modelos populares en el mercado argentino.'),(2,'Volkswagen Argentina','Marca alemana reconocida por su larga trayectoria en el mercado argentino, con plantas de producción en Pacheco y Córdoba, ofreciendo una amplia gama de vehículos para distintos segmentos.'),(3,'Chevrolet Argentina','Marca estadounidense con presencia histórica en Argentina, destacada por sus modelos icónicos y una variedad de vehículos populares en el país.');
@@ -338,38 +309,6 @@ CREATE TABLE `ModeloDeVehículo` (
 -- Dumping data for table `ModeloDeVehículo`
 --
 
-LOCK TABLES `ModeloDeVehículo` WRITE;
-/*!40000 ALTER TABLE `ModeloDeVehículo` DISABLE KEYS */;
-INSERT INTO `ModeloDeVehículo` VALUES (1,'Renault Captur','SUV elegante y espacioso de Renault.',1),(2,'Volkswagen Gol Trend','Compacto y confiable, un clásico de Volkswagen.',2),(3,'Chevrolet Onix','Auto compacto y moderno de Chevrolet.',3);
-/*!40000 ALTER TABLE `ModeloDeVehículo` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `ModeloPedido`
---
-
-DROP TABLE IF EXISTS `ModeloPedido`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `ModeloPedido` (
-  `idModeloPedido` int NOT NULL AUTO_INCREMENT,
-  `cantidad` int NOT NULL,
-  `idModeloDeVehículo` int NOT NULL,
-  `idPedidoAutos` int NOT NULL,
-  PRIMARY KEY (`idModeloPedido`),
-  KEY `fk_ModeloPedido_ModeloDeVehículo1_idx` (`idModeloDeVehículo`),
-  KEY `fk_ModeloPedido_PedidoAutos1_idx` (`idPedidoAutos`),
-  CONSTRAINT `fk_ModeloPedido_ModeloDeVehículo1` FOREIGN KEY (`idModeloDeVehículo`) REFERENCES `ModeloDeVehículo` (`idModeloDeVehículo`),
-  CONSTRAINT `fk_ModeloPedido_PedidoAutos1` FOREIGN KEY (`idPedidoAutos`) REFERENCES `PedidoAutos` (`idPedidoAutos`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `ModeloPedido`
---
-
-LOCK TABLES `ModeloPedido` WRITE;
-/*!40000 ALTER TABLE `ModeloPedido` DISABLE KEYS */;
 /*!40000 ALTER TABLE `ModeloPedido` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -390,7 +329,7 @@ CREATE TABLE `PedidoAutos` (
   KEY `fk_PedidoAutos_Automotriz1_idx` (`idAutomotriz`),
   CONSTRAINT `fk_PedidoAutos_Automotriz1` FOREIGN KEY (`idAutomotriz`) REFERENCES `Automotriz` (`idAutomotriz`),
   CONSTRAINT `fk_PedidoAutos_Concesionaria1` FOREIGN KEY (`idConcesionaria`) REFERENCES `Concesionaria` (`idConcesionaria`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -399,6 +338,7 @@ CREATE TABLE `PedidoAutos` (
 
 LOCK TABLES `PedidoAutos` WRITE;
 /*!40000 ALTER TABLE `PedidoAutos` DISABLE KEYS */;
+INSERT INTO `PedidoAutos` VALUES (2,'2024-09-16',1,1),(3,'2024-09-16',1,1);
 /*!40000 ALTER TABLE `PedidoAutos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -450,85 +390,87 @@ CREATE TABLE `RegistroAutomovilPorEstacionDeTrabajo` (
 -- Dumping data for table `RegistroAutomovilPorEstacionDeTrabajo`
 --
 
-LOCK TABLES `RegistroAutomovilPorEstacionDeTrabajo` WRITE;
-/*!40000 ALTER TABLE `RegistroAutomovilPorEstacionDeTrabajo` DISABLE KEYS */;
-/*!40000 ALTER TABLE `RegistroAutomovilPorEstacionDeTrabajo` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Dumping routines for database 'bd1-tp'
---
-/*!50003 DROP PROCEDURE IF EXISTS `Alta_Concesionaria` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+   = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`elidev`@`localhost` PROCEDURE `Alta_Concesionaria`(
-	IN nombre_concesionaria VARCHAR(45),
-    IN direccion_concesionaria VARCHAR(45),
+CREATE DEFINER=`elidev`@`localhost` PROCEDURE `Alta_PedidoAutos`(
+	IN fecha_pedido DATE,
+    IN id_concesionaria INT,
+    IN id_automotriz INT,
+    IN modelos_pedidos JSON,
     OUT nResultado INT,
     OUT cMensaje VARCHAR(255)
 )
 BEGIN
-    DECLARE existe_nombre INT;
-    DECLARE existe_direccion INT;
+	DECLARE existe_concesionaria INT;
+    DECLARE existe_automotriz INT;
+    DECLARE existe_modelo INT;
+    
+    DECLARE id_pedido INT;
+    DECLARE cantidad_auto INT;
+    DECLARE id_modelo_auto INT;
+    
+   -- Se utiliza como bandera para controlar el avance del cursor.
+    DECLARE fin_iteracion INT DEFAULT FALSE;
+    DECLARE cur CURSOR FOR SELECT * FROM JSON_TABLE(modelos_pedidos, '$[*]' COLUMNS(idModeloAuto INT PATH '$.idModeloAuto', cantidad INT PATH '$.cantidad')) AS j;
 
-    -- Verificar si ya existe una concesionaria con el mismo nombre
-    SELECT COUNT(*) INTO existe_nombre FROM Concesionaria WHERE nombre = nombre_concesionaria;
-    IF existe_nombre > 0 THEN
+    /*
+    * Esta línea se encarga de manejar la situación en la que no hay más registros para procesar en el cursor, y al activarse,
+    * marca la variable "fin_iteracion" como verdadera para indicar que se ha completado la iteración sobre los resultados del cursor.
+    */
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET fin_iteracion = TRUE;
+    
+    -- Verificar si la concesionaria indicada existe
+    SELECT COUNT(*) INTO existe_concesionaria FROM Concesionaria WHERE idConcesionaria = id_concesionaria;
+    IF existe_concesionaria = 0 THEN
         SET nResultado = -1;
-        SET cMensaje = 'Ya existe una concesionaria con ese nombre.';
-    ELSE
-        -- Verificar si ya existe una concesionaria con la misma dirección
-        SELECT COUNT(*) INTO existe_direccion FROM Concesionaria WHERE direccion = direccion_concesionaria;
-        IF existe_direccion > 0 THEN
-            SET nResultado = -2;
-            SET cMensaje = 'Ya existe una concesionaria con esa dirección.';
-        ELSE
-            INSERT INTO Concesionaria (nombre, direccion) VALUES (nombre_concesionaria, direccion_concesionaria);
-            SET nResultado = 0;
-            SET cMensaje = '';
-        END IF;
+        SET cMensaje = 'La concesionaria indicada no existe.';
     END IF;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `Alta_Insumo` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`elidev`@`localhost` PROCEDURE `Alta_Insumo`(
-	IN nombre VARCHAR(45),
-	IN descripcion VARCHAR(100),
-    OUT nResultado INT,
-    OUT cMensaje VARCHAR(255)
-)
-BEGIN
-	DECLARE existe INT;
 
-	SELECT COUNT(*) INTO existe FROM Insumo i WHERE i.nombre = nombre;
-	IF existe > 0 THEN
-		SET nResultado = -1;
-        SET cMensaje = 'Ya existe un insumo con ese nombre.';
-    ELSE
-        INSERT INTO Insumo (nombre, descripcion) VALUES(nombre, descripcion);
+    -- Verificar si la automotriz indicada existe
+    SELECT COUNT(*) INTO existe_automotriz FROM Automotriz WHERE idAutomotriz = id_automotriz;
+    IF existe_automotriz = 0 THEN
+        SET nResultado = -2;
+        SET cMensaje = 'La automotriz indicada no existe.';
+    END IF;
+
+    -- Verificar si los modelos de auto indicados existen
+    OPEN cur;
+    leer_loop: LOOP
+        FETCH cur INTO id_modelo_auto, cantidad_auto;
+        IF fin_iteracion THEN
+            LEAVE leer_loop;
+        END IF;
+
+        SELECT COUNT(*) INTO existe_modelo FROM ModeloDeVehículo WHERE idModeloDeVehículo = id_modelo_auto;
+        IF existe_modelo = 0 THEN
+            SET nResultado = -3;
+            SET cMensaje = CONCAT('El modelo de auto con ID ', id_modelo_auto, ' no existe.');
+        END IF;
+   	LEAVE leer_loop;
+    END LOOP;
+   CLOSE cur;
+    
+    IF nResultado IS NULL THEN
+        -- Insertar el pedido en PedidoAutos
+        INSERT INTO PedidoAutos (fecha, idConcesionaria, idAutomotriz) VALUES (fecha_pedido, id_concesionaria, id_automotriz);
+        SET id_pedido = LAST_INSERT_ID();  -- Obtener el ID del pedido recién insertado
+
+        OPEN cur;
+        leer_loop: LOOP
+            FETCH cur INTO id_modelo_auto, cantidad_auto;
+            IF fin_iteracion THEN
+                LEAVE leer_loop;
+            END IF;
+
+            -- Insertar el modelo de vehículo solicitado en ModeloPedido
+            INSERT INTO ModeloPedido (cantidad, idModeloDeVehículo, idPedidoAutos) VALUES (cantidad_auto, id_modelo_auto, id_pedido);
+        END LOOP;
+        CLOSE cur;
+        
         SET nResultado = 0;
         SET cMensaje = '';
     END IF;
+
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -815,4 +757,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-09-14  0:24:35
+-- Dump completed on 2024-09-15 18:07:35
