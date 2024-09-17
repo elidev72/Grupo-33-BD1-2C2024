@@ -165,7 +165,7 @@ CREATE TABLE `Insumo` (
   `nombre` varchar(45) NOT NULL,
   `descripcion` varchar(100) NOT NULL,
   PRIMARY KEY (`idInsumo`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -174,7 +174,7 @@ CREATE TABLE `Insumo` (
 
 LOCK TABLES `Insumo` WRITE;
 /*!40000 ALTER TABLE `Insumo` DISABLE KEYS */;
-INSERT INTO `Insumo` VALUES (2,'Motor Pro','es un motor pro');
+INSERT INTO `Insumo` VALUES (2,'Motor Pro','es un motor pro'),(3,'rueda','es una rueda xd');
 /*!40000 ALTER TABLE `Insumo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -204,6 +204,7 @@ CREATE TABLE `InsumoPedido` (
 
 LOCK TABLES `InsumoPedido` WRITE;
 /*!40000 ALTER TABLE `InsumoPedido` DISABLE KEYS */;
+INSERT INTO `InsumoPedido` VALUES (9,3,1,874),(15,2,1,284),(15,3,8,1604);
 /*!40000 ALTER TABLE `InsumoPedido` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -250,7 +251,7 @@ CREATE TABLE `ListaDeInsumosPedidos` (
   KEY `fk_listaDeInsumosPedidos_Proveedor1_idx` (`idProveedor`),
   CONSTRAINT `fk_listaDeInsumosPedidos_LíneaDeMontaje1` FOREIGN KEY (`idLíneaDeMontaje`) REFERENCES `LíneaDeMontaje` (`idLíneaDeMontaje`),
   CONSTRAINT `fk_listaDeInsumosPedidos_Proveedor1` FOREIGN KEY (`idProveedor`) REFERENCES `Proveedor` (`idProveedor`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -259,6 +260,7 @@ CREATE TABLE `ListaDeInsumosPedidos` (
 
 LOCK TABLES `ListaDeInsumosPedidos` WRITE;
 /*!40000 ALTER TABLE `ListaDeInsumosPedidos` DISABLE KEYS */;
+INSERT INTO `ListaDeInsumosPedidos` VALUES (9,'2024-09-20',1,1),(15,'2024-09-20',1,1);
 /*!40000 ALTER TABLE `ListaDeInsumosPedidos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -539,6 +541,93 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `Alta_ListaDeInsumosPedidos` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`elidev`@`localhost` PROCEDURE `Alta_ListaDeInsumosPedidos`(
+    IN fechaPedido DATE,
+    IN idLineaMontaje INT,
+    IN idProveedor INT,
+    IN insumosPedidos JSON,
+    OUT nResultado INT,
+    OUT cMensaje VARCHAR(255)
+)
+BEGIN
+    DECLARE existeLineaMontaje INT;
+    DECLARE existeProveedor INT;
+    DECLARE existeInsumo INT;
+    
+    DECLARE idPedido INT;
+   	DECLARE idDelInsumo INT;
+    DECLARE cantidadInsumo INT;
+   	DECLARE precioUnitarioInsumo INT;
+    
+    DECLARE fin_iteracion INT DEFAULT FALSE;
+   	DECLARE cur CURSOR FOR SELECT * FROM JSON_TABLE(insumosPedidos, '$[*]' COLUMNS(idDelInsumo INT PATH '$.idInsumo', cantidad INT PATH '$.cantidad', precioUnitario INT PATH '$.precioUnitario')) AS j;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET fin_iteracion = TRUE;
+    
+    -- Verificar si la línea de montaje indicada existe
+    SELECT COUNT(*) INTO existeLineaMontaje FROM LíneaDeMontaje ldm WHERE ldm.idLíneaDeMontaje = idLineaMontaje;
+    IF existeLineaMontaje = 0 THEN
+        SET nResultado = -1;
+        SET cMensaje = 'La línea de montaje indicada no existe.';
+    END IF;
+
+    -- Verificar si el proveedor indicado existe
+    SELECT COUNT(*) INTO existeProveedor FROM Proveedor p WHERE p.idProveedor = idProveedor;
+    IF existeProveedor = 0 THEN
+        SET nResultado = -2;
+        SET cMensaje = 'El proveedor indicado no existe.';
+    END IF;
+   
+   -- Empezar la transacción
+   START TRANSACTION;
+   IF nResultado IS NULL THEN
+        -- Insertar el pedido en ListaDeInsumosPedidos
+       INSERT INTO ListaDeInsumosPedidos (fecha, idLíneaDeMontaje, idProveedor) VALUES (fechaPedido, idLineaMontaje, idProveedor);
+       SET idPedido = LAST_INSERT_ID();  -- Obtener el ID del pedido recién insertado
+   		-- Verificar si los insumos indicados existen e insertar en la tabla
+	   OPEN cur;
+	    leer_loop: LOOP
+	        FETCH cur INTO idDelInsumo, cantidadInsumo, precioUnitarioInsumo;
+	        IF fin_iteracion THEN
+	            LEAVE leer_loop;
+	        END IF;
+	        
+	        -- Corregido el nombre de la variable a idDelInsumo
+	        SELECT COUNT(*) INTO existeInsumo FROM Insumo i WHERE i.idInsumo = idDelInsumo;
+	        IF existeInsumo = 0 THEN
+	            SET nResultado = -3;
+	            SET cMensaje = CONCAT('El insumo con ID ', idDelInsumo, ' no existe.');
+	            ROLLBACK;
+	            LEAVE leer_loop;
+	        END IF;
+	
+	        -- Insertar los insumos pedidos en InsumoPedido
+	        INSERT INTO InsumoPedido (idlLstaDeInsumosPedidos, idInsumo, cantidad, precioUnitario)
+	        VALUES (idPedido, idDelInsumo, cantidadInsumo, precioUnitarioInsumo);
+	    END LOOP;
+	    CLOSE cur;
+	   
+	   IF nResultado IS NULL THEN
+	   	SET nResultado = 0;
+        SET cMensaje = '';
+	   END IF;
+	END IF;
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 DROP PROCEDURE IF EXISTS `Alta_PedidoAutos` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -736,6 +825,45 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `Baja_ListaDeInsumosPedidos` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`elidev`@`localhost` PROCEDURE `Baja_ListaDeInsumosPedidos`(
+	IN id INT,
+	OUT nResultado INT,
+    OUT cMensaje VARCHAR(255)
+)
+BEGIN
+	-- Verificar si el pedido de insumos a eliminar existe
+    DECLARE existe_pedido INT;
+    SELECT COUNT(*) INTO existe_pedido FROM ListaDeInsumosPedidos l WHERE l.idlLstaDeInsumosPedidos = id;
+   
+   IF existe_pedido = 0 THEN
+        SET nResultado = -1;
+        SET cMensaje = 'La Lista de Insumos Pedidos no existe.';
+    ELSE
+        -- Eliminar el detalle de Insumos Pedidos
+        DELETE FROM InsumoPedido ip WHERE ip.idlLstaDeInsumosPedidos = id;
+        
+        -- Eliminar el pedido
+        DELETE FROM ListaDeInsumosPedidos l WHERE l.idlLstaDeInsumosPedidos = id;
+       
+        SET nResultado = 0;
+        SET cMensaje = '';
+    END IF;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 DROP PROCEDURE IF EXISTS `Baja_PedidoAutos` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -901,6 +1029,82 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `Modificacion_ListaDeInsumosPedidos` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`elidev`@`localhost` PROCEDURE `Modificacion_ListaDeInsumosPedidos`(
+    IN id INT,
+    IN insumosPedidos JSON,
+    OUT nResultado INT,
+    OUT cMensaje VARCHAR(255)
+)
+BEGIN
+    DECLARE existe_pedido INT;
+   	DECLARE existeInsumo INT;
+   
+   	DECLARE idDelInsumo INT;
+    DECLARE cantidadInsumo INT;
+   	DECLARE precioUnitarioInsumo INT;
+    
+    DECLARE fin_iteracion INT DEFAULT FALSE;
+   	DECLARE cur CURSOR FOR SELECT * FROM JSON_TABLE(insumosPedidos, '$[*]' COLUMNS(idDelInsumo INT PATH '$.idInsumo', cantidad INT PATH '$.cantidad', precioUnitario INT PATH '$.precioUnitario')) AS j;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET fin_iteracion = TRUE;
+   
+   -- Verificar si el pedido a eliminar existe
+    SELECT COUNT(*) INTO existe_pedido FROM ListaDeInsumosPedidos l WHERE l.idlLstaDeInsumosPedidos = id;
+    
+    IF existe_pedido = 0 THEN
+        SET nResultado = -1;
+        SET cMensaje = 'El pedido a eliminar no existe.';
+    ELSE
+	   -- Empezar la transacción
+	   START TRANSACTION;
+	   IF nResultado IS NULL THEN
+	        -- Eliminar el detalle de Insumos Pedidos
+	       DELETE FROM InsumoPedido ip WHERE ip.idlLstaDeInsumosPedidos = id;
+	   		-- Verificar si los insumos indicados existen e insertar en la tabla
+		   OPEN cur;
+		    leer_loop: LOOP
+		        FETCH cur INTO idDelInsumo, cantidadInsumo, precioUnitarioInsumo;
+		        IF fin_iteracion THEN
+		            LEAVE leer_loop;
+		        END IF;
+		        
+		        -- Corregido el nombre de la variable a idDelInsumo
+		        SELECT COUNT(*) INTO existeInsumo FROM Insumo i WHERE i.idInsumo = idDelInsumo;
+		        IF existeInsumo = 0 THEN
+		            SET nResultado = -3;
+		            SET cMensaje = CONCAT('El insumo con ID ', idDelInsumo, ' no existe.');
+		            ROLLBACK;
+		            LEAVE leer_loop;
+		        END IF;
+		
+		        -- Insertar los insumos pedidos en InsumoPedido
+		        INSERT INTO InsumoPedido (idlLstaDeInsumosPedidos, idInsumo, cantidad, precioUnitario)
+		        VALUES (id, idDelInsumo, cantidadInsumo, precioUnitarioInsumo);
+		    END LOOP;
+		    CLOSE cur;
+		   
+		   IF nResultado IS NULL THEN
+		   	SET nResultado = 0;
+	        SET cMensaje = '';
+		   END IF;
+		END IF;
+        
+    END IF;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 DROP PROCEDURE IF EXISTS `Modificacion_PedidoAutos` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -1036,4 +1240,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-09-15 20:06:53
+-- Dump completed on 2024-09-17 11:01:03
