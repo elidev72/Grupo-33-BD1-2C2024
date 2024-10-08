@@ -1,3 +1,5 @@
+CREATE DATABASE  IF NOT EXISTS `bd1-tp` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `bd1-tp`;
 -- MySQL dump 10.13  Distrib 8.0.39, for Linux (x86_64)
 --
 -- Host: localhost    Database: bd1-tp
@@ -68,7 +70,7 @@ CREATE TABLE `Automovil` (
 
 LOCK TABLES `Automovil` WRITE;
 /*!40000 ALTER TABLE `Automovil` DISABLE KEYS */;
-INSERT INTO `Automovil` VALUES (1,'0','2024-10-08',NULL,1,2),(2,'1','2024-10-08',NULL,1,2),(3,'2','2024-10-08',NULL,1,2),(4,'3','2024-10-08',NULL,1,2),(5,'4','2024-10-08',NULL,1,2),(6,'5','2024-10-08',NULL,1,2),(7,'6','2024-10-08',NULL,1,2),(8,'7','2024-10-08',NULL,3,2),(9,'8','2024-10-08',NULL,3,2),(10,'9','2024-10-08',NULL,1,2),(11,'10','2024-10-08',NULL,1,2),(12,'11','2024-10-08',NULL,1,2),(13,'12','2024-10-08',NULL,1,2),(14,'13','2024-10-08',NULL,1,2),(15,'14','2024-10-08',NULL,1,2),(16,'15','2024-10-08',NULL,1,2),(17,'16','2024-10-08',NULL,3,2),(18,'17','2024-10-08',NULL,3,2);
+INSERT INTO `Automovil` VALUES (1,'0','2024-10-08','2024-10-08',1,2),(2,'1','2024-10-08',NULL,1,2),(3,'2','2024-10-08',NULL,1,2),(4,'3','2024-10-08',NULL,1,2),(5,'4','2024-10-08',NULL,1,2),(6,'5','2024-10-08',NULL,1,2),(7,'6','2024-10-08',NULL,1,2),(8,'7','2024-10-08',NULL,3,2),(9,'8','2024-10-08',NULL,3,2),(10,'9','2024-10-08',NULL,1,2),(11,'10','2024-10-08',NULL,1,2),(12,'11','2024-10-08',NULL,1,2),(13,'12','2024-10-08',NULL,1,2),(14,'13','2024-10-08',NULL,1,2),(15,'14','2024-10-08',NULL,1,2),(16,'15','2024-10-08',NULL,1,2),(17,'16','2024-10-08',NULL,3,2),(18,'17','2024-10-08',NULL,3,2);
 /*!40000 ALTER TABLE `Automovil` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -457,7 +459,7 @@ CREATE TABLE `RegistroAutomovilPorEstacionDeTrabajo` (
 
 LOCK TABLES `RegistroAutomovilPorEstacionDeTrabajo` WRITE;
 /*!40000 ALTER TABLE `RegistroAutomovilPorEstacionDeTrabajo` DISABLE KEYS */;
-INSERT INTO `RegistroAutomovilPorEstacionDeTrabajo` VALUES (1,1,'2024-10-08 06:02:45',NULL),(13,9,'2024-10-08 06:04:15',NULL);
+INSERT INTO `RegistroAutomovilPorEstacionDeTrabajo` VALUES (1,1,'2024-10-08 06:02:45','2024-10-08 20:25:42'),(1,2,'2024-10-08 20:28:06','2024-10-08 20:28:19'),(2,1,'2024-10-08 20:25:42','2024-10-08 20:27:05'),(2,2,'2024-10-08 20:28:19',NULL),(3,1,'2024-10-08 20:27:05','2024-10-08 20:27:19'),(4,1,'2024-10-08 20:27:19','2024-10-08 20:27:21'),(5,1,'2024-10-08 20:27:21','2024-10-08 20:27:22'),(6,1,'2024-10-08 20:27:22','2024-10-08 20:27:25'),(13,9,'2024-10-08 06:04:15','2024-10-08 20:28:42'),(14,9,'2024-10-08 20:28:42','2024-10-08 20:28:51'),(15,9,'2024-10-08 20:28:51',NULL);
 /*!40000 ALTER TABLE `RegistroAutomovilPorEstacionDeTrabajo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1373,6 +1375,116 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `MoverAutomovil` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`elidev`@`localhost` PROCEDURE `MoverAutomovil`(
+	IN pPatente VARCHAR(45),
+    OUT nResultado INT,
+    OUT cMensaje VARCHAR(255)
+)
+BEGIN
+    DECLARE vChasis INT DEFAULT NULL;
+    DECLARE vIdLineaDeMontaje INT DEFAULT NULL;
+    DECLARE vIdEstacionActual INT DEFAULT NULL;
+    DECLARE vOrdenEstacionActual INT DEFAULT NULL;
+    DECLARE vIdEstacionSiguiente INT DEFAULT NULL;
+    DECLARE vChasisOcupado INT DEFAULT NULL;
+    DECLARE vUltimaEstacion BOOLEAN DEFAULT FALSE;
+
+    -- Inicializar las variables de salida
+    SET nResultado = 0;
+    SET cMensaje = '';
+
+    -- Buscar el chasis y la línea de montaje del automóvil según la patente
+    SELECT a.chasis, a.idLíneaDeMontaje INTO vChasis, vIdLineaDeMontaje
+    FROM Automovil a
+    WHERE a.patente = pPatente
+    LIMIT 1;
+
+    -- Si no existe el automóvil, configuramos el error y terminamos
+    IF vChasis IS NULL THEN
+        SET nResultado = -1;
+        SET cMensaje = 'Automóvil no encontrado';
+    ELSE
+        -- Obtener la estación actual en la que se encuentra el automóvil
+        SELECT et.idEstaciónDeTrabajo, et.orden INTO vIdEstacionActual, vOrdenEstacionActual
+        FROM EstaciónDeTrabajo et
+        JOIN RegistroAutomovilPorEstacionDeTrabajo ra ON et.idEstaciónDeTrabajo = ra.idEstaciónDeTrabajo
+        WHERE ra.chasis = vChasis
+        AND ra.fechaEgreso IS NULL
+        LIMIT 1;
+
+        -- Si no se encuentra la estación actual, configuramos el error
+        IF vIdEstacionActual IS NULL THEN
+            SET nResultado = -2;
+            SET cMensaje = 'El automóvil no se encuentra en ninguna estación de trabajo';
+        ELSE
+            -- Marcar la fecha de egreso de la estación actual
+            UPDATE RegistroAutomovilPorEstacionDeTrabajo
+            SET fechaEgreso = NOW()
+            WHERE chasis = vChasis
+            AND idEstaciónDeTrabajo = vIdEstacionActual
+            AND fechaEgreso IS NULL;
+
+            -- Verificar si la estación actual es la última de la línea de montaje
+            SELECT COUNT(*) INTO vUltimaEstacion
+            FROM EstaciónDeTrabajo et
+            WHERE et.idLíneaDeMontaje = vIdLineaDeMontaje
+            AND et.orden > vOrdenEstacionActual;
+
+            IF vUltimaEstacion = 0 THEN
+                -- Si es la última estación, marcar el automóvil como finalizado
+                UPDATE Automovil
+                SET fechaFinalizacion = NOW()
+                WHERE chasis = vChasis;
+
+                SET nResultado = 0;
+                SET cMensaje = 'Montaje finalizado. Automóvil marcado como completado.';
+            ELSE
+                -- Obtener la siguiente estación en la línea de montaje
+                SELECT et.idEstaciónDeTrabajo INTO vIdEstacionSiguiente
+                FROM EstaciónDeTrabajo et
+                WHERE et.idLíneaDeMontaje = vIdLineaDeMontaje
+                AND et.orden = vOrdenEstacionActual + 1
+                LIMIT 1;
+
+                -- Verificar si la estación siguiente está ocupada
+                SELECT ra.chasis INTO vChasisOcupado
+                FROM RegistroAutomovilPorEstacionDeTrabajo ra
+                WHERE ra.idEstaciónDeTrabajo = vIdEstacionSiguiente
+                AND ra.fechaEgreso IS NULL
+                LIMIT 1;
+
+                IF vChasisOcupado IS NOT NULL THEN
+                    -- Si está ocupada, configuramos el error
+                    SET nResultado = -3;
+                    SET cMensaje = CONCAT('La siguiente estación está ocupada por el automóvil con chasis: ', vChasisOcupado);
+                ELSE
+                    -- Insertar el automóvil en la siguiente estación
+                    INSERT INTO RegistroAutomovilPorEstacionDeTrabajo (idEstaciónDeTrabajo, chasis, fechaIngreso)
+                    VALUES (vIdEstacionSiguiente, vChasis, NOW());
+
+                    SET nResultado = 0;
+                    SET cMensaje = 'Automóvil movido a la siguiente estación.';
+                END IF;
+            END IF;
+        END IF;
+    END IF;
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -1383,4 +1495,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-10-08  6:09:45
+-- Dump completed on 2024-10-08 20:31:28
