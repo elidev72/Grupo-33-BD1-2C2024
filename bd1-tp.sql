@@ -1,5 +1,3 @@
-CREATE DATABASE  IF NOT EXISTS `bd1-tp` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `bd1-tp`;
 -- MySQL dump 10.13  Distrib 8.0.39, for Linux (x86_64)
 --
 -- Host: localhost    Database: bd1-tp
@@ -61,7 +59,7 @@ CREATE TABLE `Automovil` (
   KEY `fk_Automovil_PedidoAutos1_idx` (`idPedidoAutos`),
   CONSTRAINT `fk_Automovil_LíneaDeMontaje1` FOREIGN KEY (`idLíneaDeMontaje`) REFERENCES `LíneaDeMontaje` (`idLíneaDeMontaje`),
   CONSTRAINT `fk_Automovil_PedidoAutos1` FOREIGN KEY (`idPedidoAutos`) REFERENCES `PedidoAutos` (`idPedidoAutos`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -70,6 +68,7 @@ CREATE TABLE `Automovil` (
 
 LOCK TABLES `Automovil` WRITE;
 /*!40000 ALTER TABLE `Automovil` DISABLE KEYS */;
+INSERT INTO `Automovil` VALUES (1,'0','2024-10-08',NULL,1,2),(2,'1','2024-10-08',NULL,1,2),(3,'2','2024-10-08',NULL,1,2),(4,'3','2024-10-08',NULL,1,2),(5,'4','2024-10-08',NULL,1,2),(6,'5','2024-10-08',NULL,1,2),(7,'6','2024-10-08',NULL,1,2),(8,'7','2024-10-08',NULL,3,2),(9,'8','2024-10-08',NULL,3,2),(10,'9','2024-10-08',NULL,1,2),(11,'10','2024-10-08',NULL,1,2),(12,'11','2024-10-08',NULL,1,2),(13,'12','2024-10-08',NULL,1,2),(14,'13','2024-10-08',NULL,1,2),(15,'14','2024-10-08',NULL,1,2),(16,'15','2024-10-08',NULL,1,2),(17,'16','2024-10-08',NULL,3,2),(18,'17','2024-10-08',NULL,3,2);
 /*!40000 ALTER TABLE `Automovil` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -458,6 +457,7 @@ CREATE TABLE `RegistroAutomovilPorEstacionDeTrabajo` (
 
 LOCK TABLES `RegistroAutomovilPorEstacionDeTrabajo` WRITE;
 /*!40000 ALTER TABLE `RegistroAutomovilPorEstacionDeTrabajo` DISABLE KEYS */;
+INSERT INTO `RegistroAutomovilPorEstacionDeTrabajo` VALUES (1,1,'2024-10-08 06:02:45',NULL),(13,9,'2024-10-08 06:04:15',NULL);
 /*!40000 ALTER TABLE `RegistroAutomovilPorEstacionDeTrabajo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -936,6 +936,149 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `GenerarAutomovilesPedido` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`elidev`@`localhost` PROCEDURE `GenerarAutomovilesPedido`(
+	IN id_pedido INT,
+    OUT nResultado INT,
+    OUT cMensaje VARCHAR(255)
+)
+BEGIN
+    DECLARE id_modelo_auto INT;
+    DECLARE cantidad_auto INT;
+    DECLARE chasis INT;
+    DECLARE id_linea_montaje INT;
+    DECLARE contador INT DEFAULT 0;
+    
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur CURSOR FOR SELECT idModeloDeVehículo, cantidad FROM ModeloPedido WHERE idPedidoAutos = id_pedido;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    
+    SET nResultado = 0;
+    SET cMensaje = '';
+    
+    OPEN cur;
+    
+    leer_loop: LOOP
+        FETCH cur INTO id_modelo_auto, cantidad_auto;
+        IF done THEN
+            LEAVE leer_loop;
+        END IF;
+        
+        SET contador = 0;
+        WHILE contador < cantidad_auto DO
+            -- Obtener la línea de montaje del modelo
+            SELECT lm.idLíneaDeMontaje INTO id_linea_montaje
+            FROM ModeloDeVehículo mdv
+            JOIN LíneaDeMontaje lm ON mdv.idModeloDeVehículo = lm.idModeloDeVhículo
+            WHERE mdv.idModeloDeVehículo = id_modelo_auto;
+            
+            -- Verificar si se encontró la línea de montaje
+            IF id_linea_montaje IS NULL THEN
+                SET nResultado = -1;
+                SET cMensaje = CONCAT('No se encontró la línea de montaje para el modelo ', id_modelo_auto);
+                LEAVE leer_loop;
+            END IF;
+            
+            -- Insertar el automóvil en la tabla Automóvil
+            INSERT INTO Automovil (patente, fechaInicio, idLíneaDeMontaje, idPedidoAutos)
+            VALUES ((SELECT MAX(chasis) FROM Automovil), NOW(), id_linea_montaje, id_pedido);
+            
+            SET contador = contador + 1;
+        END WHILE;
+    END LOOP;
+    CLOSE cur;
+    
+    -- Verificar si se insertaron todos los autos
+    IF ROW_COUNT() = 0 THEN
+        SET nResultado = -1;
+        SET cMensaje = 'No se pudieron generar los automóviles para el pedido.';
+    END IF;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `IniciarMontajeAutomovil` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`elidev`@`localhost` PROCEDURE `IniciarMontajeAutomovil`(
+	IN pPatente VARCHAR(45),
+    OUT nResultado INT,
+    OUT cMensaje VARCHAR(255)
+)
+BEGIN
+    DECLARE vChasis INT DEFAULT NULL;
+    DECLARE vIdLineaDeMontaje INT DEFAULT NULL;
+    DECLARE vIdPrimeraEstacion INT DEFAULT NULL;
+    DECLARE vChasisOcupado INT DEFAULT NULL;
+
+    -- Inicializamos las variables de salida
+    SET nResultado = 0;
+    SET cMensaje = '';
+
+    -- Buscar el chasis y la línea de montaje del automóvil según la patente
+    SELECT chasis, idLíneaDeMontaje INTO vChasis, vIdLineaDeMontaje
+    FROM Automovil
+    WHERE patente = pPatente
+    LIMIT 1;
+
+    -- Si no existe el automóvil, configurar el error y finalizar
+    IF vChasis IS NULL THEN
+        SET nResultado = -1;
+        SET cMensaje = 'Automóvil no encontrado';
+    ELSE
+        -- Obtener la primera estación de la línea de montaje
+        SELECT idEstaciónDeTrabajo INTO vIdPrimeraEstacion
+        FROM EstaciónDeTrabajo
+        WHERE idLíneaDeMontaje = vIdLineaDeMontaje
+        AND orden = 1
+        LIMIT 1;
+
+        -- Verificar si la primera estación está ocupada
+        SELECT chasis INTO vChasisOcupado
+        FROM RegistroAutomovilPorEstacionDeTrabajo
+        WHERE idEstaciónDeTrabajo = vIdPrimeraEstacion
+        AND fechaEgreso IS NULL
+        LIMIT 1;
+
+        -- Si la estación está ocupada, configurar el error
+        IF vChasisOcupado IS NOT NULL THEN
+            SET nResultado = -2;
+            SET cMensaje = CONCAT('Estación ocupada por el automóvil con chasis: ', vChasisOcupado);
+        ELSE
+            -- Si no está ocupada, insertar el automóvil en la primera estación de trabajo
+            INSERT INTO RegistroAutomovilPorEstacionDeTrabajo (idEstaciónDeTrabajo, chasis, fechaIngreso)
+            VALUES (vIdPrimeraEstacion, vChasis, NOW());
+
+            -- Configurar resultado de éxito
+            SET nResultado = 0;
+            SET cMensaje = '';
+        END IF;
+    END IF;
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 DROP PROCEDURE IF EXISTS `Modificacion_Concesionaria` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -1240,4 +1383,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-09-17 11:01:03
+-- Dump completed on 2024-10-08  6:09:45
