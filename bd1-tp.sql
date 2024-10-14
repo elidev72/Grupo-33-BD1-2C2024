@@ -1495,4 +1495,56 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
+DROP PROCEDURE IF EXISTS ListarVehiculosPorPedido;
+
+DELIMITER $$
+CREATE PROCEDURE ListarVehiculosPorPedido(IN pedidoID INT)
+BEGIN
+    SELECT 
+        a.chasis,
+        IF(a.fechaFinalizacion IS NOT NULL, 'Finalizado', 
+            IF(r.chasis IS NULL, 'Comenzando', 'En proceso')
+        ) AS estado,
+        IF(a.fechaFinalizacion IS NULL, et.trabajo, NULL) AS estacionActual
+    FROM
+        pedidoautos pa
+        INNER JOIN automovil a ON pa.idPedidoAutos = a.idPedidoAutos
+        LEFT JOIN (
+            SELECT r.chasis, r.idEstaciónDeTrabajo
+            FROM registroautomovilporestaciondetrabajo r
+            INNER JOIN (
+                SELECT chasis, MAX(fechaIngreso) AS ultimaFecha
+                FROM registroautomovilporestaciondetrabajo
+                GROUP BY chasis
+            ) r2 ON r.chasis = r2.chasis AND r.fechaIngreso = r2.ultimaFecha
+        ) r ON a.chasis = r.chasis
+        LEFT JOIN estacióndetrabajo et ON r.idEstaciónDeTrabajo = et.idEstaciónDeTrabajo
+    WHERE
+        pa.idPedidoAutos = pedidoID;
+END $$
+
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS ListarInsumosPorPedido;
+DELIMITER $$
+
+CREATE PROCEDURE ListarInsumosPorPedido(IN pedidoID INT)
+BEGIN
+	SELECT
+		pa.idPedidoAutos as pedido,
+		pa.fecha as fecha,
+		SUM(ip.cantidad) as cantidad,
+		i.nombre as nombre,
+		i.descripcion as descripcion
+	FROM
+		pedidoautos pa
+		INNER JOIN automovil a ON a.idPedidoAutos = pa.idPedidoAutos
+		INNER JOIN líneademontaje lm ON lm.idLíneaDeMontaje = a.idLíneaDeMontaje
+		INNER JOIN listadeinsumospedidos lip ON lip.idLíneaDeMontaje = lm.idLíneaDeMontaje
+		INNER JOIN insumopedido ip ON lip.idlLstaDeInsumosPedidos = ip.idlLstaDeInsumosPedidos
+		INNER JOIN insumo i ON ip.idInsumo = i.idInsumo
+	GROUP BY pa.idPedidoAutos, pa.fecha, i.nombre, i.descripcion;
+END $$
+
+DELIMITER ;
 -- Dump completed on 2024-10-08 20:31:28
