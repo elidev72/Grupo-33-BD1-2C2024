@@ -1513,6 +1513,13 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
+
+CREATE INDEX idx_pedidoautos_idPedido ON pedidoautos (idPedidoAutos);
+CREATE INDEX idx_automovil_idPedido ON automovil (idPedidoAutos);
+CREATE INDEX idx_automovil_chasis ON automovil (chasis);
+CREATE INDEX idx_registroautomovil_chasis ON registroautomovilporestaciondetrabajo (chasis);
+CREATE INDEX idx_registroautomovil_fecha ON registroautomovilporestaciondetrabajo (fechaIngreso);
+CREATE INDEX idx_estacion_id ON estacióndetrabajo (idEstaciónDeTrabajo);
 DROP PROCEDURE IF EXISTS ListarVehiculosPorPedido;
 
 DELIMITER $$
@@ -1540,12 +1547,15 @@ BEGIN
     WHERE
         pa.idPedidoAutos = pedidoID;
 END $$
-
 DELIMITER ;
 
+CREATE INDEX idx_linea_id ON líneademontaje (idLíneaDeMontaje);
+CREATE INDEX idx_listadeinsumos_idLinea ON listadeinsumospedidos (idLíneaDeMontaje);
+CREATE INDEX idx_insumopedido_id ON insumopedido (idlLstaDeInsumosPedidos);
+CREATE INDEX idx_insumo_id ON insumo (idInsumo);
 DROP PROCEDURE IF EXISTS ListarInsumosPorPedido;
-DELIMITER $$
 
+DELIMITER $$
 CREATE PROCEDURE ListarInsumosPorPedido(IN pedidoID INT)
 BEGIN
 	SELECT
@@ -1564,7 +1574,11 @@ BEGIN
 	GROUP BY pa.idPedidoAutos, pa.fecha, i.nombre, i.descripcion;
 END $$
 DELIMITER ;
+
+
+CREATE INDEX idx_idLineaDeMontaje_fechaFinalizacion ON Automovil (idLíneaDeMontaje, fechaFinalizacion);
 DROP PROCEDURE IF EXISTS CalcularTiempoPromedioConstruccionPorLinea;
+
 DELIMITER $$
 CREATE PROCEDURE CalcularTiempoPromedioConstruccionPorLinea(
     IN pIdLineaDeMontaje INT,
