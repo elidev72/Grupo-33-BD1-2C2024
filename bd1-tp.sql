@@ -70,7 +70,25 @@ CREATE TABLE `Automovil` (
 
 LOCK TABLES `Automovil` WRITE;
 /*!40000 ALTER TABLE `Automovil` DISABLE KEYS */;
-INSERT INTO `Automovil` VALUES (1,'0','2024-10-08','2024-10-08',1,2),(2,'1','2024-10-08',NULL,1,2),(3,'2','2024-10-08',NULL,1,2),(4,'3','2024-10-08',NULL,1,2),(5,'4','2024-10-08',NULL,1,2),(6,'5','2024-10-08',NULL,1,2),(7,'6','2024-10-08',NULL,1,2),(8,'7','2024-10-08',NULL,3,2),(9,'8','2024-10-08',NULL,3,2),(10,'9','2024-10-08',NULL,1,2),(11,'10','2024-10-08',NULL,1,2),(12,'11','2024-10-08',NULL,1,2),(13,'12','2024-10-08',NULL,1,2),(14,'13','2024-10-08',NULL,1,2),(15,'14','2024-10-08',NULL,1,2),(16,'15','2024-10-08',NULL,1,2),(17,'16','2024-10-08',NULL,3,2),(18,'17','2024-10-08',NULL,3,2);
+INSERT INTO `Automovil` VALUES 
+(1,'0','2024-10-08','2024-10-08',1,2),
+(2,'1','2024-10-08',NULL,1,2),
+(3,'2','2024-10-08',NULL,1,2),
+(4,'3','2024-10-08',NULL,1,2),
+(5,'4','2024-10-08',NULL,1,2),
+(6,'5','2024-10-08',NULL,1,2),
+(7,'6','2024-10-08',NULL,1,2),
+(8,'7','2024-10-08','2024-10-14',3,2),
+(9,'8','2024-10-08','2024-10-16',3,2),
+(10,'9','2024-10-08',NULL,1,2),
+(11,'10','2024-10-08',NULL,1,2),
+(12,'11','2024-10-08',NULL,1,2),
+(13,'12','2024-10-08',NULL,1,2),
+(14,'13','2024-10-08',NULL,1,2),
+(15,'14','2024-10-08',NULL,1,2),
+(16,'15','2024-10-08',NULL,1,2),
+(17,'16','2024-10-08','2024-10-31',3,2),
+(18,'17','2024-10-08','2024-11-01',3,2);
 /*!40000 ALTER TABLE `Automovil` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1544,6 +1562,25 @@ BEGIN
 		INNER JOIN insumopedido ip ON lip.idlLstaDeInsumosPedidos = ip.idlLstaDeInsumosPedidos
 		INNER JOIN insumo i ON ip.idInsumo = i.idInsumo
 	GROUP BY pa.idPedidoAutos, pa.fecha, i.nombre, i.descripcion;
+END $$
+DELIMITER ;
+DROP PROCEDURE IF EXISTS CalcularTiempoPromedioConstruccionPorLinea;
+DELIMITER $$
+CREATE PROCEDURE CalcularTiempoPromedioConstruccionPorLinea(
+    IN pIdLineaDeMontaje INT,
+    OUT tiempoPromedioConstruccion DECIMAL(10, 2)
+)
+BEGIN
+    -- Calcula el tiempo promedio de construcción de los vehículos terminados en una línea de montaje específica
+    SELECT AVG(TIMESTAMPDIFF(SECOND, a.fechaInicio, a.fechaFinalizacion)) / 3600 INTO tiempoPromedioConstruccion
+    FROM Automovil a
+    WHERE a.idLíneaDeMontaje = pIdLineaDeMontaje
+    AND a.fechaFinalizacion IS NOT NULL;
+
+    -- Si no hay vehículos terminados, devuelve NULL
+    IF tiempoPromedioConstruccion IS NULL THEN
+        SET tiempoPromedioConstruccion = 0;
+    END IF;
 END $$
 
 DELIMITER ;
